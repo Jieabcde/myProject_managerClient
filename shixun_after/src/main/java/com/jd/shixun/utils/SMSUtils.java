@@ -25,7 +25,7 @@ public class SMSUtils {
 	 */
 	public static void sendMessage(String signName, String templateCode,String phoneNumbers,String param) {
 
-		DefaultProfile profile = DefaultProfile.getProfile("cn-shenzhen", "LTAI5tED2y7hpKwbKM9V3JeG", "lN2kwqKGxEX5Vzs6h3edwkjchoLPIl");
+		DefaultProfile profile = DefaultProfile.getProfile("cn-shenzhen", "aa", "aa");
 		/** use STS Token
 		 DefaultProfile profile = DefaultProfile.getProfile(
 		 "<your-region-id>",           // The region ID
