@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <!-- 引入样式 -->
+  <link rel="stylesheet" href="../../plugins/element-ui/index.css" />
+  <link rel="stylesheet" href="../../styles/common.css" />
+  <link rel="stylesheet" href="../../styles/page.css" />
+  <style>
+  .search-btn {
+    margin-left: 20px;
+  }
+  .tableBar{
+    justify-content: flex-start !important;
+  }
+  .info-box{
+    margin: -15px -44px 20px;
+  }
+  .info-box .item-box{
+    display: flex;
+    height: 20px;
+    line-height: 20px;
+    font-size: 14px;
+    font-weight: 400;
+    color: #666666;
+    text-align: left;
+    margin-bottom: 14px;
+  }
+  .info-box .item-box:last-child{
+    margin-bottom: 0;
+  }
+  .info-box .item-box .label{
+    width: 96px;
+  }
+  .info-box .item-box .des{
+    flex: 1;
+    color: #333333;
+  }
+  </style>
+</head>
+<body>
+  <div class="dashboard-container" id="order-app" v-loading="loading">
+    <div class="container">
+      <!-- 搜索项 -->
+      <div class="tableBar">
+        <el-input v-model="input" placeholder="请输入订单号" style="width: 250px">
+          <i slot="prefix" class="el-input__icon el-icon-search" style="cursor: pointer" @click="init"></i>
+        </el-input>
+        <el-date-picker v-model="orderTime"
+          clearable
+          value-format="yyyy-MM-dd HH:mm:ss"
+          type="datetimerange"
+          placeholder="选择日期"
+          range-separator="至"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+          :default-time="['00:00:00', '23:59:59']"
+          style="width: 400px;margin-left: 20px;"
+        ></el-date-picker>
+        <el-button type="primary" class="search-btn" @click="init">查询</el-button>
+      </div>
+      <el-table :data="tableData" stripe class="tableBox">
+        <el-table-column prop="oid" label="订单号" min-width="110"></el-table-column>
+        <el-table-column prop="订单状态" label="订单状态">
+          <template slot-scope="{ row }">
+            <span>{{ getOrderType(row) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="uid" label="用户ID" min-width="110"></el-table-column>
+        <el-table-column prop="userName" label="用户名称" min-width="110"></el-table-column>
+        <el-table-column prop="orderTime" label="下单时间" min-width="100"></el-table-column>
+        <el-table-column prop="checkoutTime" label="付款时间" min-width="100"></el-table-column>
+        <el-table-column prop="oprice" label="实收金额">
+          <template slot-scope="{ row }">
+            <span>￥{{ row.oprice }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column
+                label="操作"
+                width="160"
+                align="center"
+        >
+          <template slot-scope="scope">
+            <el-button
+                    type="text"
+                    size="small"
+                    class="blueBug"
+                    @click="editOrder(scope.row.oid)"
+            >
+              查看详情并修改
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <el-pagination
+        class="pageList"
+        :page-sizes="[10, 20, 30, 40]"
+        :page-size="pageSize"
+        :current-page.sync="page"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="counts"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      ></el-pagination>
+    </div>
+  </div>
+    <!-- 开发环境版本，包含了有帮助的命令行警告 -->
+    <script src="../../plugins/vue/vue.js"></script>
+    <!-- 引入组件库 -->
+    <script src="../../plugins/element-ui/index.js"></script>
+    <!-- 引入axios -->
+    <script src="../../plugins/axios/axios.min.js"></script>
+    <script src="../../js/request.js"></script>
+    <script src="../../api/order.js"></script>
+    <script>
+      new Vue({
+        el: '#order-app',
+        data() {
+          return {
+             input: '',
+             orderTime: '',
+             beginTime: '',
+             endTime: '',
+             counts: 0,
+             page: 1,
+             pageSize: 10,
+             tableData : [],
+             dialogVisible: false,
+             diaForm: {},
+             loading: false
+          }
+        },
+        computed: {}, //计算
+        watch:{   //监视
+          orderTime (val) {
+            if (val && val.length >= 2) {
+              this.beginTime = val[0]
+              this.endTime = val[1]
+            } else {
+              this.beginTime = ''
+              this.endTime = ''
+            }
+          }
+        },
+        created() {
+          this.init()
+        },
+        mounted() {
+          // this.loading = false
+        },
+        methods: {
+          async init () {
+            getOrderDetailPage({ page: this.page, pageSize: this.pageSize, number: this.input || undefined, beginTime: this.beginTime || undefined, endTime: this.endTime || undefined }).then(res => {
+              if (String(res.code) === '1') {
+                this.tableData = res.data.records || []
+                this.counts = res.data.total
+              }
+            }).catch(err => {
+              this.$message.error('请求出错了：' + err)
+            })
+          },
+          handleQuery() {
+            this.page = 1;
+            this.init();
+          },
+           getOrderType (row) {
+            let str = ''
+            switch(row.ostatus){
+                case 1:
+                    str =  '待发货（已付款）'
+                break;
+                case 2:
+                    str =  '待付款'
+                break;
+                case 3:
+                    str =  '已完成'
+                break;
+                case 4:
+                    str =  '已取消'
+                break;
+                case 5:
+                    str =  '发货中'
+                break;
+            }
+            return str
+          },
+          editOrder(st) {
+            window.parent.menuHandle({
+              id: '7',
+              url: '/backend/page/order/edit.html?id='+st,
+              name: '订单明细'
+            },true)
+          },
+          // 删除
+          deleteOrder (oid) {
+            this.$confirm('确认删除该商品, 是否继续?', '确定删除', {
+              'confirmButtonText': '确定',
+              'cancelButtonText': '取消',
+            }).then(() => {
+              deleteOrder(oid).then(res => {
+                if (res.code === 1) {
+                  this.$message.success('删除成功！')
+                  this.handleQuery()
+                } else {
+                  this.$message.error(res.msg || '操作失败')
+                }
+              }).catch(err => {
+                this.$message.error('请求出错了：' + err)
+              })
+            })
+          },
+          handleClose () {
+            this.dialogVisible = false
+          },
+          handleSizeChange (val) {
+            this.pageSize = val
+            this.init()
+          },
+          handleCurrentChange (val) {
+            this.page = val
+            this.init()
+          }
+        }
+      })
+    </script>
+</body>
+</html>

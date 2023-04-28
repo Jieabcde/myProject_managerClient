@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brancy管理端</title>
+  <link rel="shortcut icon" href="../../favicon.ico">
+  <!-- 引入样式 -->
+  <link rel="stylesheet" href="../../plugins/element-ui/index.css" />
+  <link rel="stylesheet" href="../../styles/common.css">
+  <link rel="stylesheet" href="../../styles/login.css">
+
+  <link rel="stylesheet" href="../../styles/icon/iconfont.css" />
+  <style>
+    .body{
+      min-width: 1366px;
+    }
+
+	#passwordlogin{
+		border: none;
+		background-color: #fff;
+		padding: 0 20px 20px 20px;
+		/* margin-top: 20px; */
+		color: rgb(93,93,93);
+			border-bottom: brown;
+	}
+	#textlogin{
+		border: none;
+		background-color: #fff;
+		padding: 0 20px 20px 20px;
+		/* margin-top: 20px; */
+		color: rgb(93,93,93);
+	}
+
+	.click{
+		/* border-bottom:1px solid #13CE66; */
+		color: red;
+	}
+  </style>
+</head>
+
+<body>
+  <div class="login" id="login-app">
+    <div class="login-box" >
+      <img src="../../images/login/login-l.png" alt="">
+      <div class="login-form">
+        <el-form ref="loginForm" :model="loginForm" :rules="loginRules" >
+          <div class="login-form-title">
+            <img src="../../images/login/logo.png" style="width:120px;height:80px;" alt="" />
+          </div>
+          <br>
+		  <!-- 切换按钮 -->
+		  <div class="tabbtn" >
+		  	<button type="button" id="passwordlogin"  @click="passwordlogin">密码登录</button>
+			<button type="button" id="textlogin" @click="textlogin" :class="tabstyle">验证码登录</button>
+		  </div>
+
+		  <!-- 密码验证 -->
+		  <div id="passwordinfo">
+
+
+		  	<el-form-item prop="username">
+				<!--v-model="loginForm.username"  -->
+		  	  <el-input
+			   type="text" auto-complete="off" placeholder="用户名" maxlength="20" v-model="loginForm.username"
+		  	    prefix-icon="iconfont icon-user" />
+		  	</el-form-item>
+	<!-- v-model="loginForm.password" -->
+		  	<el-form-item prop="password">
+		  	  <el-input  type="password" placeholder="密码" prefix-icon="iconfont icon-lock" maxlength="20" v-model="loginForm.password"
+		  	    @keyup.enter.native="handleLogin" />
+		  	</el-form-item>
+              <el-form-item style="width:100%;">
+                  <el-button :loading="loading" class="login-btn" size="medium" type="primary" style="width:100%;"
+                             @click.native.prevent="handleLogin">
+                      <span v-if="!loading">登录111</span>
+                      <span v-else>登录中...</span>
+                  </el-button>
+              </el-form-item>
+		  </div>
+		  <!-- 短信验证 -->
+         <div id="textinfo">
+         	<el-form-item prop="username">
+				<!-- v-model="loginForm.username" -->
+         	  <el-input  type="text" auto-complete="off" placeholder="手机号" maxlength="20" v-model="form.phone"
+         	    prefix-icon="iconfont icon-user" />
+         	</el-form-item>
+         	<el-form-item prop="password">
+				<!--  v-model="loginForm.password"  -->
+         	  <el-input type="password" placeholder="验证码" prefix-icon="iconfont icon-lock" maxlength="20" v-model="form.code"
+         	     style="position: relative;">
+
+				</el-input>
+				<button type="button" @click="getCode" style="position: absolute; right:10px;top:5px;">获取验证码</button>
+         	</el-form-item>
+<!--             <el-form-item style="width:100%;">-->
+<!--                 <el-button :loading="loading" class="login-btn" size="medium" type="primary" style="width:100%;"-->
+                            >
+<!--                     <span @click="AA">登录</span>-->
+<!--                 </el-button>-->
+<!--             </el-form-item>-->
+             <span @click="AA">登录</span>
+         </div>
+
+
+        </el-form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 开发环境版本，包含了有帮助的命令行警告 -->
+  <script src="../../plugins/vue/vue.js"></script>
+  <!-- 引入组件库 -->
+  <script src="../../plugins/element-ui/index.js"></script>
+    <script src="./../js/vant.min.js"></script>
+    <!-- 引入axios -->
+  <script src="../../plugins/axios/axios.min.js"></script>
+  <script src="../../js/request.js"></script>
+  <script src="../../js/validate.js"></script>
+  <script src="../../api/login.js"></script>
+
+  <script>
+    new Vue({
+      el: '#login-app',
+      data() {
+          return {
+              loginForm: {
+                  username: 'admin',
+                  password: '123456'
+              },
+              form: {
+                  phone: '',
+                  code: ''
+              },
+              loading: false,
+              tabstyle: 'normal',
+              msgFlag: false,
+          };
+      },
+      computed: {
+        loginRules() {
+          const validateUsername = (rule, value, callback) => {
+            if (value.length < 1 ) {
+              callback(new Error('请输入用户名'))
+            } else {
+              callback()
+            }
+          }
+          const validatePassword = (rule, value, callback) => {
+            if (value.length < 6) {
+              callback(new Error('密码必须在6位以上'))
+            } else {
+              callback()
+            }
+          }
+          return {
+            'username': [{ 'validator': validateUsername, 'trigger': 'blur' }],
+            'password': [{ 'validator': validatePassword, 'trigger': 'blur' }]
+          }
+        }
+      },
+      created() {
+this.passwordlogin()
+      },
+      methods: {
+        async handleLogin() {
+          this.$refs.loginForm.validate(async (valid) => { //validate()校验用户名密码是否为空
+            if (valid) {
+              this.loading = true
+              let res = await loginApi(this.loginForm) //loginApi 登录url，具体代码写在了自己创建的js里
+              if (String(res.code) === '1') { //这个1是前后端约定好的， 1表示成功
+                localStorage.setItem('userInfo',JSON.stringify(res.data)) //存储到浏览器中
+                window.location.href= '/backend/index.html'
+              } else {
+                this.$message.error(res.msg)
+                this.loading = false
+              }
+            }
+          })
+        },
+          getCode() {
+              this.form.code = ''
+              const regex = /^(13[0-9]{9})|(15[0-9]{9})|(17[0-9]{9})|(18[0-9]{9})|(19[0-9]{9})$/;
+              if (regex.test(this.form.phone)) {
+                  this.msgFlag = false
+                  // this.form.code = (Math.random()*1000000).toFixed(0)
+                  sendMsgApi({phone: this.form.phone})
+              } else {
+                  this.msgFlag = true
+              }
+          },
+          async AA() {
+              console.log(13123123)
+              let {data: result} = await axios.get(`/admin/msgLogin?phone=${this.form.phone}&code=${this.form.code}`);
+              console.log(result)
+              if (result.code === 1) {
+                  localStorage.setItem('userInfo', JSON.stringify(result.data)); //存储到浏览器中
+                  window.location.href = '/backend/index.html';
+              } else {
+                  this.$message.error(result.msg)
+              }
+
+          },
+
+
+		// 点击密码登录
+		passwordlogin(){
+				var textinfo=document.querySelector("#textinfo")
+			textinfo.style.display = 'none';
+			var passwordinfo=document.querySelector("#passwordinfo")
+			passwordinfo.style.display = 'block';
+
+
+		},
+		// 点击验证码登录
+		textlogin(){
+			this.tabstyle='click';
+			var passwordinfo=document.querySelector('#passwordinfo')
+			passwordinfo.style.display = 'none';
+			var textinfo=document.querySelector('#textinfo')
+			textinfo.style.display = 'block';
+
+		},
+
+      }
+    })
+  </script>
+</body>
+
+</html>

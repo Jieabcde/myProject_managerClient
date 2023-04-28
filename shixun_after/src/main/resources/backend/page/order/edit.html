@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <!-- 引入样式 -->
+  <link rel="stylesheet" href="../../plugins/element-ui/index.css" />
+  <link rel="stylesheet" href="../../styles/common.css" />
+  <link rel="stylesheet" href="../../styles/page.css" />
+  <style>
+    .selectInput {
+      position: relative;
+      width: 100%;
+      min-width: 100px;
+    }
+    .selectInput .flavorSelect {
+      position: absolute;
+      width: 100%;
+      padding: 0 10px;
+      border-radius: 3px;
+      border: solid 1px #ccdeff;
+      line-height: 30px;
+      text-align: center;
+      background: #fff;
+      top: 50px;
+      z-index: 99;
+    }
+    .selectInput .flavorSelect .items {
+      cursor: pointer;
+      display: inline-block;
+      width: 100%;
+      line-height: 35px;
+      border-bottom: solid 1px #f4f4f4;
+      color: #666;
+    }
+    .selectInput .flavorSelect .none {
+      font-size: 14px;
+    }
+
+    #food-add-app .uploadImg .el-form-item__label::before{
+          content: '*';
+          color: #F56C6C;
+          margin-right: 4px;
+      }
+
+  </style>
+</head>
+<body>
+   <div class="addBrand-container" id="order-add-app">
+    <div class="container">
+      <el-form
+        ref="ruleForm"
+        :model="ruleForm"
+        :rules="rules"
+        :inline="true"
+        label-width="180px"
+        class="demo-ruleForm"
+      >
+        <div>
+          <el-form-item label-width="400px" label="订单状态编号 (1:待发货（已付款） | 2:待付款 | 3:已完成 | 4:已取消 | 5:发货中):" prop="ostatus" >
+            <el-input  v-model="ruleForm.ostatus" placeholder="请填写订单状态编号" maxlength="20"/>
+          </el-form-item>
+          <br>
+
+
+
+          <el-form-item
+                  label="选择物流:"
+                  prop="kid"
+          >
+            <el-select
+                    v-model="ruleForm.logcompanyId"
+                    placeholder="请选择物流分类"
+            >
+              <el-option v-for="(item,index) in logcompanyList" :key="index" :label="item.logcompanyName" :value="item.logcompanyId" />
+            </el-select>
+          </el-form-item>
+
+          <el-form-item label="收货人:" prop="consignee" >
+            <el-input v-model="ruleForm.consignee" placeholder="请填写收货人名称" maxlength="20"/>
+          </el-form-item>
+
+          <br>
+
+
+
+          <el-form-item label="物流单号:" prop="phone" >
+            <el-input v-model="ruleForm.logid" placeholder="请填写物流单号" maxlength="20"/>
+          </el-form-item>
+
+
+          <el-form-item label="电话:" prop="phone" >
+            <el-input v-model="ruleForm.phone" placeholder="请填写收货人电话" maxlength="20"/>
+          </el-form-item>
+
+
+        </div>
+        <el-form-item label="订单编号:" prop="oid" >
+          <el-input :disabled="true" v-model="ruleForm.oid" placeholder="请填写订单号" maxlength="20"/>
+        </el-form-item>
+
+        <br>
+
+        <div v-for="p in ruleForm.orderDetails">
+          <el-form-item  label="商品:" prop="oprice" >
+            <el-input v-model="p.name" placeholder="请输入商品名" maxlength="20"/>
+          </el-form-item>
+          <el-form-item label="购买的数量:" prop="oprice" >
+            <el-input v-model="p.number" placeholder="数量" maxlength="20"/>
+          </el-form-item>
+        </div>
+        <el-form-item label="订单总金额:" prop="oprice" >
+          <el-input v-model="ruleForm.oprice" placeholder="请输入总金额" maxlength="20"/>
+        </el-form-item>
+
+        <div class="address">
+          <el-form-item
+                  label="收货地址:"
+                  prop="addressInfo"
+          >
+            <el-input
+                    v-model="ruleForm.addressInfo"
+                    type="textarea"
+                    :rows="1"
+                    placeholder="详细地址"
+                    maxlength="70"
+            />
+          </el-form-item>
+        </div>
+
+        <div class="address">
+          <el-form-item
+            label="订单描述:"
+            prop="description"
+          >
+            <el-input
+              v-model="ruleForm.description"
+              type="textarea"
+              :rows="3"
+              placeholder="订单描述，最长200字"
+              maxlength="200"
+            />
+          </el-form-item>
+        </div>
+        <div class="subBox address">
+          <el-form-item>
+            <el-button @click="goBack()">
+              取消
+            </el-button>
+            <el-button
+              type="primary"
+              @click="submitForm()"
+            >
+              保存
+            </el-button>
+
+          </el-form-item>
+        </div>
+      </el-form>
+    </div>
+  </div>
+    <!-- 开发环境版本，包含了有帮助的命令行警告 -->
+    <script src="../../plugins/vue/vue.js"></script>
+    <!-- 引入组件库 -->
+    <script src="../../plugins/element-ui/index.js"></script>
+    <!-- 引入axios -->
+    <script src="../../plugins/axios/axios.min.js"></script>
+    <script src="../../js/request.js"></script>
+    <script src="../../js/validate.js"></script>
+    <script src="../../js/index.js"></script>
+    <script src="../../api/order.js"></script>
+    <script>
+      new Vue({
+        el: '#order-add-app',
+        data() {
+          return {
+            id: '',
+            restKey: 0,
+            textarea: '',
+            value: '',
+            imageUrl: '',
+            actionType: '',
+            logcompanyList: [],
+            productLableListData: [],
+            productLableList: [],
+            vueRest : '1',
+            index : 0,
+            inputStyle  : {'flex':1},
+            ruleForm  : {
+              oid: '',
+              uid: '',
+              addressId: '',
+              oprice: '',
+              orderTime:'',
+              checkoutTime:'',
+              ostatus:'',
+              description:'',
+              userName:'',
+              addressInfo:'',
+              phone:'',
+              consignee:'',
+              orderDetails:[],
+              logid:'',
+              logcompanyId:''
+            },
+            productList:[],
+            mak: false
+          }
+        },
+        created() {
+          this.getKindList()//获得物流分类列表
+          this.id = requestUrlParam('id')/*得到oid主键 订单编号 */
+          if (this.id) {
+            this.init()
+          }
+        },
+        mounted() {
+        },
+        methods: {
+          async init () {
+            queryOrderById(this.id).then(res => {
+              console.log(res)
+              if (String(res.code) === '1') {
+                this.ruleForm = { ...res.data }
+                this.productList = this.ruleForm.orderDetails;
+              } else {
+                this.$message.error(res.msg || '操作失败')
+              }
+            })
+          },
+
+          // 获取分类
+          getKindList () {
+            getlogcompanyList().then(res => {
+              if (res.code === 1) {
+                this.logcompanyList = res.data
+              } else {
+                this.$message.error(res.msg || '操作失败')
+              }
+            })
+          },
+          submitForm() {
+            editOrder(this.ruleForm).then(res => {
+                    if (res.code === 1) {
+                      this.$message.success('商品修改成功！')
+                      this.goBack()
+                    } else {
+                      this.$message.error(res.msg || '操作失败')
+                    }
+                  }).catch(err => {
+                    this.$message.error('请求出错了：' + err)
+                  })
+          },
+
+          goBack(){
+            window.parent.menuHandle({
+              id: '7',
+              url: '/backend/page/order/list.html',
+              name: '订单管理'
+            },false)
+          }
+        }
+      })
+    </script>
+</body>
+</html>

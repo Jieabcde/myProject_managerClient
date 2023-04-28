@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <!-- 引入样式 -->
+  <link rel="stylesheet" href="../../plugins/element-ui/index.css" />
+  <link rel="stylesheet" href="../../styles/common.css" />
+  <link rel="stylesheet" href="../../styles/page.css" />
+</head>
+<body>
+  <div class="dashboard-container" id="userLevel-app">
+    <div class="container">
+      <div
+        class="tableBar"
+        style="display: inline-block"
+      >
+        <el-button
+          type="primary"
+          class="continue"
+          @click="addClass('class')"
+        >
+          + 新增会员等级
+        </el-button>
+      </div>
+      <el-table
+        :data="tableData"
+        stripe
+        class="tableBox"
+      >
+        <el-table-column
+          prop="lname"
+          label="等级名称"
+        /></el-table-column>
+        <el-table-column
+                prop="ldes"
+                label="等级描述"
+        /></el-table-column>
+        <el-table-column
+                prop="lpointRule"
+                label="等级规则"
+        />
+        <template slot-scope="scope">
+          {{'需要达到'+scope.row.lpointRule+'积分'}}
+        </template>
+
+        </el-table-column>
+
+        <el-table-column
+                prop="createTime"
+                label="创建时间"
+        >
+          <template slot-scope="scope">
+            {{scope.row.createTime}}
+          </template>
+        </el-table-column>
+
+        <el-table-column
+          prop="updateTime"
+          label="最新更新时间"
+        >
+        <template slot-scope="scope">
+         {{scope.row.updateTime}}
+        </template>
+        </el-table-column>
+
+        <el-table-column
+          label="操作"
+          width="160"
+          align="center"
+        >
+          <template slot-scope="scope">
+            <el-button
+              type="text"
+              size="small"
+              class="blueBug"
+              @click="editHandle(scope.row)"
+            >
+              修改
+            </el-button>
+            <el-button
+              type="text"
+              size="small"
+              class="delBut non"
+              @click="deleteHandle(scope.row.lid)"
+            >
+              删除
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <el-pagination
+        class="pageList"
+        :page-sizes="[10, 20, 30, 40]"
+        :page-size="pageSize"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="counts"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      ></el-pagination>
+    </div>
+    <el-dialog
+      :title="classData.title"
+      :visible.sync="classData.dialogVisible"
+      width="30%"
+      :before-close="handleClose"
+    >
+      <el-form
+        class="demo-form-inline"
+        label-width="100px"
+      >
+        <el-form-item label="等级名称：">
+          <el-input
+            v-model="classData.lname"
+            placeholder="请输入等级名称"
+            maxlength="14"
+          />
+        </el-form-item>
+
+        <el-form-item label="等级规则：">
+          <el-input
+                  v-model="classData.lpointRule"
+                  placeholder="请输入等级规则"
+                  maxlength="10"
+          />
+        </el-form-item>
+        <el-form-item label="等级描述：">
+          <el-input
+                  v-model="classData.ldes"
+                  placeholder="请输入等级描述"
+                  maxlength="30"
+          />
+        </el-form-item>
+
+
+      </el-form>
+      <span
+        slot="footer"
+        class="dialog-footer"
+      >
+        <el-button
+          size="medium"
+          @click="classData.dialogVisible = false"
+        >取 消</el-button>
+        <el-button
+          type="primary"
+          size="medium"
+          @click="submitForm()"
+        >确 定</el-button>
+        <el-button
+          v-if="action != 'edit'"
+          type="primary"
+          size="medium"
+          class="continue"
+          @click="submitForm('go')"
+        > 保存并继续添加 </el-button>
+      </span>
+    </el-dialog>
+  </div>
+    <!-- 开发环境版本，包含了有帮助的命令行警告 -->
+    <script src="../../plugins/vue/vue.js"></script>
+    <!-- 引入组件库 -->
+    <script src="../../plugins/element-ui/index.js"></script>
+    <!-- 引入axios -->
+    <script src="../../plugins/axios/axios.min.js"></script>
+    <script src="../../js/request.js"></script>
+    <script src="../../api/userLevel.js"></script>
+    <script>
+      new Vue({
+        el: '#userLevel-app',
+        data() {
+          return {
+            action: '',
+            counts: 0,
+            page: 1,
+            pageSize: 10,
+            tableData: [],
+            type :'',
+            classData: {
+              'title': '新增会员等级',
+              'dialogVisible': false,
+              'lid': '',
+              'lname': '',
+              'ldes':'',
+              'lpointRule':''
+            }
+          }
+        },
+        computed: {},
+        created() {
+          this.init()
+        },
+        mounted() {
+        },
+        methods: {
+          async init () {
+            await getUserLavelPage({'page': this.page, 'pageSize': this.pageSize}).then(res => {
+              if (String(res.code) === '1') {
+                this.tableData = res.data.records
+                this.counts = Number(res.data.total)
+              } else {
+                this.$message.error(res.msg || '操作失败')
+              }
+            }).catch(err => {
+              this.$message.error('请求出错了：' + err)
+            })
+          },
+          handleQuery() {
+            this.page = 1;
+            this.init();
+          },
+           // 添加
+          addClass() {
+            this.classData.title = '新增会员等级'
+            this.action = 'add'
+            this.classData.lname = ''
+            this.classData.ldes = ''
+            this.classData.lpointRule = ''
+            this.classData.dialogVisible = true
+          },
+          editHandle(dat) {
+            this.classData.title = '修改会员等级'
+            this.action = 'edit'
+            this.classData.lid=dat.lid
+            this.classData.lname = dat.lname
+            this.classData.ldes = dat.ldes
+            this.classData.lpointRule = dat.lpointRule
+            this.classData.dialogVisible = true
+          },
+          // 关闭弹窗
+          handleClose(st) {
+            this.classData.dialogVisible = false
+          },
+          //删除
+          deleteHandle(id) {
+            this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
+              'confirmButtonText': '确定',
+              'cancelButtonText': '取消',
+              'type': 'warning'
+            }).then(() => {
+              deleCategory(id).then(res => {
+                if (res.code === 1) {
+                  this.$message.success('删除成功！')
+                  this.handleQuery()
+                } else {
+                  this.$message.error(res.msg || '操作失败')
+                }
+              }).catch(err => {
+                this.$message.error('请求出错了：' + err)
+              })
+            })
+          },
+          //数据提交
+          submitForm(st) {
+              const classData = this.classData
+              const valid = (classData.lname === 0 ||classData.lname)  && (classData.ldes === 0 || classData.ldes)  && (classData.lpointRule === 0 || classData.lpointRule)
+              if (this.action === 'add') {
+                if (valid) {
+                  const reg = /^\d+$/
+                  if (true) {
+                    addUserLevel({'lname': classData.lname,'ldes':classData.ldes, 'lpointRule': classData.lpointRule}).then(res => {
+                      console.log(res)
+                      if (res.code === 1) {
+                        this.$message.success('等级添加成功！')
+                        if (!st) {
+                          this.classData.dialogVisible = false
+                        } else {
+                          this.classData.lname = ''
+                          this.classData.leds = ''
+                          this.classData.lpointRule = ''
+                        }
+                        this.handleQuery()
+                      } else {
+                        this.$message.error(res.msg || '操作失败')
+                      }
+                    }).catch(err => {
+                      this.$message.error('请求出错了：' + err)
+                    })
+                  }
+              } else {
+                  this.$message.error('请把信息填写完整')
+              }
+            } else if (valid) {
+              const reg = /^\d+$/
+              if (true) {
+                editUserLevel({'lid':this.classData.lid,'lname': this.classData.lname,'ldes':classData.ldes,'lpointRule': classData.lpointRule}).then(res => {
+                  if (res.code === 1) {
+                    this.$message.success('会员等级修改成功！')
+                    this.classData.dialogVisible = false
+                    this.handleQuery()
+                  } else {
+                    this.$message.error(res.msg || '操作失败')
+                  }
+                }).catch(err => {
+                  this.$message.error('请求出错了：' + err)
+                })
+              }
+            } else {
+              this.$message.error('请输入分类名称或排序')
+            }
+          },
+          handleSizeChange (val) {
+            this.pageSize = val
+            this.init()
+          },
+          handleCurrentChange (val) {
+            this.page = val
+            this.init()
+          }
+        }
+      })
+    </script>
+</body>
+</html>

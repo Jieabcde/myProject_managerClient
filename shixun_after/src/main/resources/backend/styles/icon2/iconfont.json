@@ -1,0 +1,23 @@
+{
+  "id": "3487050",
+  "name": "shixun",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "20406473",
+      "name": "会员等级",
+      "font_class": "huiyuandengji",
+      "unicode": "e789",
+      "unicode_decimal": 59273
+    },
+    {
+      "icon_id": "1116",
+      "name": "账户",
+      "font_class": "zhanghu",
+      "unicode": "e600",
+      "unicode_decimal": 58880
+    }
+  ]
+}

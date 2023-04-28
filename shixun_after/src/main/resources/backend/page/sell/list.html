@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <script src="../../js/echarts.js"></script>
+    <style>
+        img{
+            width: 150px;
+            height: 150px;
+        }
+        .num{
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+        }
+        .cc{
+            width: 32%;
+            margin-bottom: 20px;
+
+        }
+
+        .icon {
+            width: 80px;
+            height: 80px;
+            font-size: 30px;
+            text-align: center;
+            line-height: 80px;
+            color: #fff;
+        }
+        .detail {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            margin-left: 15px;
+        }
+        .price {
+            font-size: 30px;
+            margin-bottom: 0px;
+            line-height: 30px;
+            height: 30px;
+            margin-top: 10px;
+
+        }
+        .desc {
+            font-size: 14px;
+            color: #999;
+            text-align: center;
+        }
+        .graph{
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .dd {
+            width: 48%;
+        }
+        .vv {
+            width: 2200px;
+            left: -700px;
+            height: 440px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <el-row>
+            <el-col :span="8" style="padding-right: 10px">
+                <el-card class="box-card" >
+                    <el-table
+                            :data="tableData"
+                            height="620"
+                            border
+                            style="width: 100%">
+                        <el-table-column
+                                prop="pname"
+                                label="商品名称"
+                                width="195">
+                        </el-table-column>
+                        <el-table-column
+                                prop="pmonthsale"
+                                label="本月销售"
+                                width="90">
+                        </el-table-column>
+                        <el-table-column
+                                prop="pstock"
+                                label="剩余库存"
+                                width="90">
+                        </el-table-column>
+                    </el-table>
+                </el-card>
+
+            </el-col>
+            <el-col :span="16" style="padding-left: 10px">
+                <div class="num">
+                    <el-card   class="cc" v-for="item in countData" :key="item.name" :body-style="{display:'flex', padding:0}">
+                        <i class="icon" :class="`el-icon-${item.icon}`" :style="{background:item.color}"></i>
+                        <div class="detail">
+                            <p class="price">{{item.value}}</p>
+                            <p class="desc">{{item.name}}</p>
+                        </div>
+                    </el-card>
+                </div>
+
+                <el-card style="height: 440px" >
+                    <div ref="echarts3" class="vv"></div>
+                </el-card>
+
+            </el-col>
+        </el-row>
+    </div>
+
+
+
+
+
+
+
+    <script src="../../plugins/vue/vue.js"></script>
+    <!-- 引入组件库 -->
+    <script src="../../plugins/element-ui/index.js"></script>
+    <!-- 引入axios -->
+    <script src="../../plugins/axios/axios.min.js"></script>
+    <script src="../../js/request.js"></script>
+    <script src="../../api/product.js"></script>
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <script>
+        axios.defaults.baseURL = "http://localhost:8088";
+        new Vue({
+            el: "#app",
+            data: {
+                tableData: [],
+                countData:[
+                    {
+                        name:"今日支付订单",
+                        value: 123,
+                        icon:"success",
+                        color:"#2ec7c9"
+                    },
+                    {
+                        name:"今日入账",
+                        value:210,
+                        icon:"s-goods",
+                        color:"#ffb980"
+                    },
+                    {
+                        name:"今日未支付订单",
+                        value:210,
+                        icon:"s-goods",
+                        color:"#5ab1ef"
+                    },
+                    {
+                        name:"本月支付订单",
+                        value: 123,
+                        icon:"success",
+                        color:"#2ec7c9"
+                    },
+                    {
+                        name:"本月入账",
+                        value:210,
+                        icon:"s-goods",
+                        color:"#ffb980"
+                    },
+                    {
+                        name:"本月未支付订单",
+                        value: 123,
+                        icon:"s-goods",
+                        color:"#2ec7c9"
+                    },
+                ],
+                categoryData:[]
+            },
+            created() {
+                this.findCategory();
+                this.findCategoryPie();
+                this.getMonthOrder();
+            },
+            methods: {
+                //获取商品销售额
+                async findCategory() {
+                    let {data: result} = await axios.get("/product/getProductSell");
+                    this.tableData = result.data;
+                    console.log("tableData",result.data)
+                },
+                //获取本月订单信息
+                async getMonthOrder() {
+                    let {data: result} = await axios.get("/order/getMonthOrder");
+                    const arr = result.data; //arr[今日支付订单，今日未支付订单，本月支付订单，本月未支付订单]
+                    this.countData[0].value=arr[0]
+                    this.countData[2].value=arr[1]
+                    this.countData[3].value=arr[2]
+                    this.countData[5].value=arr[3]
+                    console.log("arr",result.data)
+
+                    //获取入账信息
+                    let {data: r} = await axios.get("/order/getMonthOrderMoney");
+                    console.log("ddd",r.data)
+                    const money = r.data;
+                    this.countData[1].value="￥"+money[0]
+                    this.countData[4].value="￥"+money[1]
+                },
+                //获取饼图
+                async findCategoryPie() {
+                    let {data: result} = await axios.get("/product/getProductPie");
+                    this.categoryData = result.data;
+                    console.log("categoryData",result.data)
+                    //基于准备好的dom，初始化echarts实例
+                    const echarts3 = echarts.init(this.$refs.echarts3);
+                    const echarts3Option={
+                        tooltip:{
+                            trigger:"item",
+                        },
+                        color:[
+                            "#0f78f4",
+                            "#dd536b",
+                            "#9462e5",
+                            "#a6a6a6",
+                            "#e1bb22",
+                            "#3ed1cf",
+                        ],
+                        series:[
+                            {
+                                data: this.categoryData,
+                                type:'pie'
+                            }
+                        ],
+                    }
+                    echarts3.setOption(echarts3Option)
+                },
+            },
+
+        })
+    </script>
+</body>
+</html>
